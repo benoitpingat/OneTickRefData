@@ -1,0 +1,97 @@
+openapi: 3.0.0
+info:
+  title: OneTick RefData Service
+  description: RefDataService Rest End Points.
+  version: 1.0.0
+
+
+servers:
+  - url: http://gsvuk3lppr017:10184
+    description: NFR Blue server
+  - url: http://gsvuk3lppr017:10185
+    description: NFR Green server
+  - url: http://localhost:10184
+    description: local server
+
+paths:
+  /new:
+    post:
+      summary: Create new Symbology
+      description: Add a new symbology mapping
+      requestBody:
+        description: New symbol mappings
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200": # status code
+          description: New Symbology(ies) successfully entered
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: list of persisted mappings
+        "206": # status code
+          description: New Symbology(ies) partial success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: list of failures
+
+  /corporateAction:
+    post:
+      summary: Create new corporateAction
+      description: Add a new corporateAction
+      requestBody:
+        description: New corporateAction
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200": # status code
+          description: New corporateAction(s) successfully entered
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: list of persisted actions
+        "206": # status code
+          description: New CorporateAction(s) partial success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: list of failures
+
+  /LookupUUID:
+    get:
+      summary: Retrieve the RefDataUUID
+      parameters:
+        - in: query
+          name: symbol
+          schema:
+            type: string
+          required: true
+          description: Combination of Symbology::Symbol for which we request the RefUUID
+
+      description: Return the RefDataUUID if exists
+      responses:
+        "200":
+          description: Found RefUUID
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: STOCK.SPOT.XLON.T1.X-AJGWJ.VOD.SPOT.GBP.CMC
+        "206":
+          description: No RefUUID found
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: no mapping found

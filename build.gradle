@@ -1,0 +1,357 @@
+//Allows us to run this via gradle
+
+
+buildscript {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+    dependencies {
+        //classpath 'com.github.johnrengelman:shadow:8.1.1'
+        classpath 'org.gradle.toolchains:foojay-resolver:0.4.0'
+    }
+}
+
+apply plugin: 'application'
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply plugin: 'application'
+//apply plugin: 'com.github.johnrengelman.shadow'
+
+
+ext {
+    onetickPath = 'C:/omd/one_tick/bin;C:/omd/one_tick/lib'
+    onetickConfigPath = 'C:/omd/one_tick_client/config/one_tick_config.txt'
+    computedVersion = 'unknown'
+
+    //how to define `developerOnetickVersion`: https://cmcmarkets.atlassian.net/wiki/spaces/~63c530bff6d42a7a463223e4/pages/4233658647/
+    developerOnetickVersion = project.findProperty('developerOnetickVersion')
+    onetick = developerOnetickVersion ?
+            'cmc.external.onetick:jomd:' + developerOnetickVersion :
+            'cmc.external.onetick:jomd:BUILD_20170905130346'
+
+
+    springFramework = [
+            "org.springframework:spring-aop:5.3.25",
+            "org.springframework:spring-beans:5.3.25",
+            "org.springframework:spring-context:5.3.25",
+            "org.springframework:spring-core:5.3.25",
+            "org.springframework:spring-context-support:5.3.25",
+            "org.springframework:spring-expression:5.3.25",
+            "org.springframework:spring-jdbc:5.3.25",
+            "org.springframework:spring-jms:5.3.25",
+            "org.springframework:spring-tx:5.3.25",
+            "org.springframework:spring-web:5.3.25",
+            "org.springframework.retry:spring-retry:1.3.4"
+    ]
+
+    springTest = [
+            'org.springframework:spring-test:5.3.25'
+    ]
+
+    def mockitoVersion = "5.11.0"
+    unitTesting = [
+            'org.junit.jupiter:junit-jupiter:5.9.3',
+            "org.mockito:mockito-core:$mockitoVersion",
+            "org.mockito:mockito-junit-jupiter:$mockitoVersion",
+    ]
+
+    commonsLang3 = "org.apache.commons:commons-lang3:3.7"
+
+}
+
+repositories {
+    gradlePluginPortal()
+    mavenCentral()
+    maven {
+        url "http://prophet-nexus.cmc.local:8081/nexus/content/repositories/gradle-plugins/"
+        credentials {
+            username project.getProperty('mavenUsername')
+            password project.getProperty('mavenPassword')
+        }
+        allowInsecureProtocol = true
+    }
+    maven {
+        url = uri("http://prophet-nexus.cmc.local:8081/nexus/content/repositories/prophet-release")
+        credentials {
+            username project.getProperty('mavenUsername')
+            password project.getProperty('mavenPassword')
+        }
+        allowInsecureProtocol = true
+    }
+    maven {
+        url = uri("http://prophet-nexus.cmc.local:8081/nexus/content/repositories/prophet-public")
+        credentials {
+            username project.getProperty('mavenUsername')
+            password project.getProperty('mavenPassword')
+        }
+        allowInsecureProtocol = true
+    }
+    maven {
+        url = uri("http://prophet-nexus.cmc.local:8081/nexus/content/repositories/prophet-external")
+        credentials {
+            username project.getProperty('mavenUsername')
+            password project.getProperty('mavenPassword')
+        }
+        allowInsecureProtocol = true
+    }
+}
+
+dependencies {
+
+    implementation springFramework
+
+    configurations.all {
+        resolutionStrategy {
+            force 'cmc:Codec:8.0'
+            force 'com.cmcmarkets.framework:logging-framework-api:2.6'
+            force 'com.cmcmarkets.framework:service-framework-annotation:66.0'
+            force 'com.cmcmarkets.framework:messaging-framework-core:73.0'
+            force 'org.slf4j:slf4j-api:1.7.13'
+            force 'commons-codec:commons-codec:1.7'
+            force 'commons-logging:commons-logging:1.1.3'
+            force 'commons-lang:commons-lang:2.6'
+            force 'com.google.protobuf:protobuf-java:2.4.1'
+            force 'org.javassist:javassist:3.19.0-GA'
+        }
+    }
+
+    implementation('com.cmcmarkets.prophet.common.utils:prophet-common-utils:78') {
+        exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    }
+    implementation("com.cmcmarkets.prophet.pricing-common:common-core:${pricingCoreVersion}") {
+        exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    }
+    implementation("com.cmcmarkets.prophet.pricing-common:configuration:${pricingCoreVersion}")
+    implementation("com.cmcmarkets.prophet.pricing-common:generic-pricing:${pricingCoreVersion}"){
+        exclude module: 'fix'
+    }
+
+
+    implementation 'javax.xml.bind:jaxb-api:2.3.1'
+    implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.1'
+    implementation 'com.sun.activation:javax.activation:1.2.0'
+
+    implementation ('com.jcraft:jsch:0.1.54')
+    implementation ('commons-beanutils:commons-beanutils:1.9.0')
+    implementation ('cmc:ProductMaster:46.0') {
+        exclude group: 'org.springframework'
+    }
+
+    //implementation jackson
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.11.0'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.11.0'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.0'
+    implementation 'com.fasterxml:jackson-xml-databind:0.6.2'
+
+
+    //Swagger integration
+    implementation 'org.springframework:spring-web:6.0.0'
+    implementation 'io.swagger.core.v3:swagger-annotations:2.2.10'
+    implementation 'io.swagger.core.v3:swagger-core:2.2.10'
+    implementation 'io.swagger.core.v3:swagger-models:2.2.10'
+    implementation 'io.swagger.core.v3:swagger-integration:2.2.10'
+    implementation 'io.swagger.core.v3:swagger-jaxrs2:2.2.10'
+    implementation 'io.swagger.core.v3:swagger-jaxrs2-servlet-initializer:2.2.10'
+    implementation 'com.sun.net.httpserver:http:20070405'
+    implementation 'org.springframework:spring-webmvc:6.0.0'
+    implementation 'org.springframework:spring-webmvc:6.0.0'
+    implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+    implementation 'javax.ws.rs:javax.ws.rs-api:2.1.1'
+    implementation 'org.glassfish.jersey.core:jersey-common:2.34'
+    implementation 'org.glassfish.jersey.containers:jersey-container-servlet-core:2.34'
+    implementation 'org.glassfish.jersey.inject:jersey-hk2:2.34'
+    implementation 'org.glassfish.jersey.media:jersey-media-json-jackson:2.34'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+
+    //use compileOnly for jars we do not want packed in the distribution zip.
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.9.3"
+    testImplementation "org.mockito:mockito-core:5.11.0"
+    testImplementation "org.mockito:mockito-junit-jupiter:5.11.0"
+    testImplementation springTest
+}
+
+java{
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+ext {
+    pythonPlugin = 'plainoldjava'
+    onetickPath = 'C:/omd/one_tick/bin;C:/omd/one_tick/lib'
+    tibcoPath = 'C:/tibco/tibrv/8.6/bin;C:/tibco/tibrv/8.6/lib'
+    onetickConfigPath = 'C:/omd/one_tick_client/config/one_tick_config.txt'
+}
+
+run {
+
+
+    classpath = files('src/main/environment/Windows/') +
+            files('src/main/environment/common/') +
+            files('src/main/environment/') +
+            sourceSets.main.runtimeClasspath
+
+    environment 'ENVIRONMENT', 'local'
+    environment 'LD_LIBRARY_PATH', onetickPath+tibcoPath
+    environment 'ONE_TICK_CONFIG', onetickConfigPath
+    environment 'HTTP_PORT', '11057'
+
+    args = ['-p', '1234']
+    mainClass = 'com.cmcmarkets.refdata.main.RefDataService'
+
+    jvmArgs = ['-Dservice.name=RefDataService',
+               '-Dinstance.group=MAIN',
+               '-Dinstance.name=MAIN',
+               '-Dhost.name=localhost',
+               "-Denvironment.num=8"]
+}
+
+
+def commonRunConfig = {JavaExec execTask ->
+    //We need jomd (OneTick) and messaging common to go first in the list of dependencies
+    def jomdFile = configurations.runtimeClasspath.find({ file -> file.name.startsWith('jomd-') })
+    def msgCommonFile = configurations.runtimeClasspath.find({ file -> file.name.startsWith('messaging-common') })
+
+    execTask.with {
+        classpath = files('src/main/environment/Windows/') +
+                files('src/main/environment/common/') +
+                files(jomdFile) + files(msgCommonFile) +
+                sourceSets.main.runtimeClasspath
+
+        environment 'ENV', 'local'
+        environment 'ENVIRONMENT', 'local'
+        environment 'DATACENTER', 'UK2'
+        environment 'HTTP_PORT', '12345'
+
+        mainClass = 'com.cmcmarkets.refdata.main.RefDataService'
+
+        jvmArgs = ["-Dservice.name=RefDataService",
+                   "-Dinstance.name=MAIN",
+                   "-Dhost.name=localhost",
+                   "-Dinstance.group=",
+                   "-Denvironment=local",
+                   "-Denvironment.num=8",
+                   "-Dspring.profiles.active=local"
+        ]
+        return
+    }
+}
+
+task runRefDataService(type: JavaExec, group: 'application'){
+    configure commonRunConfig(this.runRefDataService)
+}
+
+configurations {
+    runtimeJars {
+        extendsFrom(runtimeClasspath)
+    }
+}
+
+tasks.register('calculateVersion', CalcVersion, project.projectDir.getAbsolutePath())
+
+task extractBuildInfo(type: ExtractBuildInfoTask) {
+
+}
+
+tasks.named("assemble") {
+    finalizedBy("extractBuildInfo")
+}
+
+extractBuildInfo.configure {
+    mustRunAfter getTasksByName("assemble", true)
+}
+
+
+distributions {
+    def binarySpec = project.copySpec {
+        into('/lib') {
+            from project.tasks.getByName('jar').outputs.files
+        }
+        into('/libext') {
+            from(project.configurations.runtimeJars){
+                exclude '**/tibrvnative*.jar'//It's provided by the classpath on the box
+                exclude '**/jomd*.jar'//It's provided by the classpath on the box
+            }
+        }
+        into('/') {
+            //Include the scripts dir from common-core
+            // TODO: this is fairly horrible (but it might actually be the one way to achieve the desired result)
+            def commonCore = configurations.runtimeClasspath.files.find { file ->
+                return file.path.contains('common-core' + File.separator + 'build' + File.separator + 'libs' + File.separator + 'common-core')
+            }
+
+            //Include this module's scripts
+            from('src/main/scripts')
+
+            // 'build.meta' is generated by the calculateVersion task
+            from(calculateVersion.extraDir) {
+                include "build.meta"
+            }
+            //dummy copy from CommonCo scripts
+            into('/scripts') {
+                from('src/main/commonScripts')
+            }
+        }
+    }
+
+    // install.sh (and hence Beeblebrox) requires separate binary and configuration artifacts
+    main {
+        contents {
+            with binarySpec
+        }
+    }
+
+    configuration {
+        distributionBaseName = project.name + '-config'
+        contents {
+            into('/') {
+                from('src/main/environment/') {
+                    exclude('**/log4j2-test.xml') // don't override the real log4j2.xml
+                }
+            }
+        }
+    }
+}
+
+publishing {
+    publications {
+        binaryPackage(MavenPublication) {
+            artifact(distZip) {
+                distZip.archiveFileName = project.name + '-' + calculateVersion.computedVersion + '.zip'
+                artifactId project.name
+                version = calculateVersion.computedVersion
+                groupId 'com.cmcmarkets.prophet.refdata'
+            }
+        }
+        configurationPackage(MavenPublication) {
+            artifact(configurationDistZip) {
+                configurationDistZip.archiveFileName = project.name + '-config' + '-' + calculateVersion.computedVersion + '.zip'
+                // install.sh expects a specific convention for the naming of the configuration artifact
+                artifactId project.name + '-config'
+                version = calculateVersion.computedVersion
+                groupId 'com.cmcmarkets.prophet.refdata'
+            }
+        }
+    }
+    repositories {
+        maven {
+            allowInsecureProtocol(true)
+            String mavenRepo = 'prophet-temp-release'
+            url "http://prophet-nexus.cmc.local:8081/nexus/content/repositories/$mavenRepo"
+            credentials {
+                username project.getProperty('mavenUsername')
+                password project.getProperty('mavenPassword')
+            }
+        }
+    }
+}
